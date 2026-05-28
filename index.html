@@ -13,7 +13,7 @@
       align-items: center; justify-content: center;
       font-family: 'Segoe UI', Tahoma, sans-serif;
       direction: rtl; padding: 20px;
-      position: relative; overflow: hidden;
+      position: relative;
     }
     .bg-fruit { position: absolute; opacity: 0.12; pointer-events: none; user-select: none; }
 
@@ -141,6 +141,36 @@
     .leave-btn:hover { color: #999; }
     .room-badge { font-size: 0.75rem; color: #ccc; margin-bottom: 14px; }
     .room-badge span { font-weight: 700; color: #e74c3c; letter-spacing: 0.1em; direction: ltr; display: inline-block; }
+    .emoji-bar {
+      display: flex; gap: 8px; justify-content: center;
+      margin-bottom: 12px; flex-wrap: wrap;
+    }
+    .emoji-btn {
+      width: 44px; height: 44px; border-radius: 50%;
+      border: 2px solid #fce4ec; background: white;
+      font-size: 1.4rem; cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.07);
+      transition: transform 0.15s;
+    }
+    .emoji-btn:hover { transform: scale(1.2); }
+    .emoji-btn:active { transform: scale(0.9); }
+
+    .emoji-bubble {
+      position: fixed; bottom: 80px;
+      font-size: 3rem; z-index: 999;
+      animation: bubbleUp 2.5s ease-out forwards;
+      pointer-events: none;
+    }
+    .emoji-bubble.mine { right: 30px; }
+    .emoji-bubble.theirs { left: 30px; }
+
+    @keyframes bubbleUp {
+      0%   { opacity: 1; transform: translateY(0) scale(1); }
+      80%  { opacity: 1; transform: translateY(-120px) scale(1.3); }
+      100% { opacity: 0; transform: translateY(-160px) scale(1); }
+    }
+
     @keyframes pop {
       0% { transform: scale(0.7); opacity: 0; }
       70% { transform: scale(1.1); }
@@ -190,8 +220,18 @@
     </div>
   </div>
   <div class="status" id="status"></div>
-  <div class="board" id="board"></div>
   <button class="reset-btn" id="reset-btn" onclick="requestReset()" style="display:none">🔄 משחק חדש</button>
+  <div class="board" id="board"></div>
+  <div class="emoji-bar" id="emoji-bar">
+    <button class="emoji-btn" onclick="sendEmoji('😂')">😂</button>
+    <button class="emoji-btn" onclick="sendEmoji('🔥')">🔥</button>
+    <button class="emoji-btn" onclick="sendEmoji('😤')">😤</button>
+    <button class="emoji-btn" onclick="sendEmoji('👏')">👏</button>
+    <button class="emoji-btn" onclick="sendEmoji('🤡')">🤡</button>
+    <button class="emoji-btn" onclick="sendEmoji('💀')">💀</button>
+    <button class="emoji-btn" onclick="sendEmoji('🫡')">🫡</button>
+    <button class="emoji-btn" onclick="sendEmoji('🍓')">🍓</button>
+  </div>
   <button class="leave-btn" onclick="leaveRoom()">עזוב חדר</button>
 </div>
 
@@ -301,7 +341,10 @@
         show('game');
         initGameUI();
       }
-      if (document.getElementById('game').style.display !== 'none') renderGame(data);
+      if (document.getElementById('game').style.display !== 'none') {
+        renderGame(data);
+        handleEmojiUpdate(data.emoji);
+      }
     });
   }
 
@@ -386,6 +429,31 @@
       turn: 'X',
     });
   };
+
+  window.sendEmoji = async function(emoji) {
+    await update(ref(db, `rooms/${roomCode}/emoji`), {
+      value: emoji,
+      from: myRole,
+      ts: Date.now(),
+    });
+  };
+
+  function showEmojiBubble(emoji, isMe) {
+    const el = document.createElement('div');
+    el.className = 'emoji-bubble ' + (isMe ? 'mine' : 'theirs');
+    el.textContent = emoji;
+    document.body.appendChild(el);
+    setTimeout(() => el.remove(), 2500);
+  }
+
+  let lastEmojiTs = 0;
+  function handleEmojiUpdate(emojiData) {
+    if (!emojiData || !emojiData.ts) return;
+    if (emojiData.ts <= lastEmojiTs) return;
+    lastEmojiTs = emojiData.ts;
+    const isMe = emojiData.from === myRole;
+    showEmojiBubble(emojiData.value, isMe);
+  }
 
   window.leaveRoom = async function() {
     if (unsubscribe) { unsubscribe(); unsubscribe = null; }
