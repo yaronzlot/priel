@@ -155,12 +155,7 @@
   <div style="font-size:2.2rem;margin-bottom:8px">🍓 X 🍋</div>
   <h1>איקס עיגול עם פריאל</h1>
   <div class="sub">משחק מרובה שחקנים</div>
-  <button class="lobby-btn btn-new" onclick="createRoom()">🆕 צור חדר חדש</button>
-  <div class="divider">או</div>
-  <div class="join-row">
-    <input class="code-input" id="join-code" maxlength="4" placeholder="קוד" oninput="this.value=this.value.replace(/\D/g,'')">
-    <button class="btn-join" onclick="joinRoom()">הצטרף</button>
-  </div>
+  <button class="lobby-btn btn-new" onclick="createRoom()">🤝 צרף חבר</button>
   <div id="lobby-err" style="color:#e74c3c;font-size:0.8rem;margin-top:10px;min-height:18px"></div>
 </div>
 
@@ -224,6 +219,7 @@
   let myRole = null;
   let roomCode = null;
   let unsubscribe = null;
+  let lastScores = { X: 0, O: 0 };
 
   // Background fruits
   ["🍇","🍊","🍏","🍑","🫐","🍍","🥭","🍒"].forEach((f, i) => {
@@ -268,6 +264,16 @@
     document.getElementById('display-code').textContent = code;
     show('waiting');
     listenRoom();
+
+    // Share invite link
+    const url = `${location.origin}${location.pathname}?room=${code}`;
+    const text = `בוא נשחק איקס עיגול עם פריאל! לחץ כאן להצטרף: ${url}`;
+    if (navigator.share) {
+      try { await navigator.share({ title: 'איקס עיגול עם פריאל', text }); } catch(e) {}
+    } else {
+      await navigator.clipboard.writeText(text);
+      alert('הלינק הועתק! שלח לחבר בווטסאפ 📋');
+    }
   };
 
   window.joinRoom = async function() {
@@ -313,6 +319,7 @@
     const result = checkWinner(board);
     const isDraw = !result && board.filter(Boolean).length === 9;
     const scores = data.scores || { X: 0, O: 0 };
+    lastScores = scores;
     const isMyTurn = data.turn === myRole && !result && !isDraw;
 
     document.getElementById('score-x').textContent = scores.X;
@@ -353,7 +360,17 @@
     const next = Array.from({length: 9}, (_, k) => board[k] || null);
     next[i] = myRole;
     const res = checkWinner(next);
-    const updates = { board: next, turn: myRole === 'X' ? 'O' : 'X' };
+    const newTurn = myRole === 'X' ? 'O' : 'X';
+
+    // Optimistic update — show move immediately without waiting for Firebase
+    const fakeData = {
+      board: next,
+      turn: newTurn,
+      scores: lastScores,
+    };
+    renderGame(fakeData);
+
+    const updates = { board: next, turn: newTurn };
     if (res) {
       const snap = await get(ref(db, `rooms/${roomCode}/scores`));
       const scores = snap.val() || { X: 0, O: 0 };
@@ -374,10 +391,37 @@
     if (unsubscribe) { unsubscribe(); unsubscribe = null; }
     if (roomCode) { await remove(ref(db, `rooms/${roomCode}`)); roomCode = null; }
     myRole = null;
-    document.getElementById('join-code').value = '';
     document.getElementById('lobby-err').textContent = '';
+    // Clear URL param
+    history.replaceState({}, '', location.pathname);
     show('lobby');
   };
+
+  // Auto-join if URL has ?room=XXXX
+  (async function() {
+    const params = new URLSearchParams(location.search);
+    const roomParam = params.get('room');
+    if (!roomParam) return;
+    const errEl = document.getElementById('lobby-err');
+    const snap = await get(ref(db, `rooms/${roomParam}`));
+    if (!snap.exists()) {
+      errEl.textContent = 'החדר לא נמצא או פג תוקף';
+      history.replaceState({}, '', location.pathname);
+      return;
+    }
+    if (snap.val().status !== 'waiting') {
+      errEl.textContent = 'החדר כבר מלא';
+      history.replaceState({}, '', location.pathname);
+      return;
+    }
+    await update(ref(db, `rooms/${roomParam}`), { status: 'playing' });
+    roomCode = roomParam;
+    myRole = 'O';
+    history.replaceState({}, '', location.pathname);
+    show('game');
+    initGameUI();
+    listenRoom();
+  })();
 </script>
 </body>
 </html>
