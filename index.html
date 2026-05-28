@@ -6,139 +6,140 @@
   <title>איקס עיגול עם פריאל</title>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
-
     body {
       min-height: 100vh;
       background: linear-gradient(135deg, #fff9f0 0%, #fde8d8 50%, #ffd6e7 100%);
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
       font-family: 'Segoe UI', Tahoma, sans-serif;
-      direction: rtl;
-      padding: 20px;
-      position: relative;
-      overflow: hidden;
+      direction: rtl; padding: 20px;
+      position: relative; overflow: hidden;
     }
+    .bg-fruit { position: absolute; opacity: 0.12; pointer-events: none; user-select: none; }
 
-    .bg-fruit {
-      position: absolute;
-      opacity: 0.12;
-      pointer-events: none;
-      user-select: none;
+    /* LOBBY */
+    #lobby {
+      background: white; border-radius: 28px; padding: 36px 32px;
+      box-shadow: 0 8px 40px rgba(0,0,0,0.12); border: 2px solid #fce4ec;
+      text-align: center; max-width: 340px; width: 100%;
     }
+    #lobby h1 { font-size: 1.5rem; font-weight: 800; color: #c0392b; margin-bottom: 6px; }
+    .sub { font-size: 0.85rem; color: #aaa; margin-bottom: 28px; }
+    .lobby-btn {
+      width: 100%; padding: 14px; border-radius: 20px; border: none;
+      font-size: 1rem; font-weight: 700; cursor: pointer;
+      font-family: inherit; margin-bottom: 12px;
+      transition: transform 0.15s, box-shadow 0.15s;
+    }
+    .lobby-btn:hover { transform: translateY(-2px); }
+    .btn-new {
+      background: linear-gradient(135deg, #e74c3c, #c0392b);
+      color: white; box-shadow: 0 4px 16px rgba(192,57,43,0.3);
+    }
+    .btn-new:hover { box-shadow: 0 8px 24px rgba(192,57,43,0.4); }
+    .divider { display: flex; align-items: center; gap: 10px; margin: 4px 0 16px; color: #ccc; font-size: 0.8rem; }
+    .divider::before, .divider::after { content:''; flex:1; height:1px; background:#f0dde0; }
+    .join-row { display: flex; gap: 8px; }
+    .code-input {
+      flex: 1; padding: 13px 14px; border-radius: 16px;
+      border: 2px solid #f0dde0; font-size: 1.2rem; font-weight: 700;
+      text-align: center; letter-spacing: 0.15em; font-family: inherit;
+      outline: none; direction: ltr; transition: border-color 0.15s;
+    }
+    .code-input:focus { border-color: #f39c12; }
+    .btn-join {
+      background: linear-gradient(135deg, #f39c12, #e67e22);
+      color: white; box-shadow: 0 4px 16px rgba(243,156,18,0.3);
+      padding: 13px 18px; border-radius: 16px; border: none;
+      font-size: 1rem; font-weight: 700; cursor: pointer;
+      font-family: inherit; transition: transform 0.15s, box-shadow 0.15s;
+    }
+    .btn-join:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(243,156,18,0.4); }
 
-    .title-area {
-      text-align: center;
-      margin-bottom: 28px;
+    /* WAITING */
+    #waiting {
+      background: white; border-radius: 28px; padding: 36px 32px;
+      box-shadow: 0 8px 40px rgba(0,0,0,0.12); border: 2px solid #fce4ec;
+      text-align: center; max-width: 340px; width: 100%; display: none;
     }
-    .title-emoji { font-size: 2.8rem; margin-bottom: 4px; }
-    h1 {
-      font-size: 1.6rem;
-      font-weight: 800;
-      color: #c0392b;
-      letter-spacing: 0.02em;
-      text-shadow: 0 2px 8px rgba(192,57,43,0.15);
+    #waiting h2 { font-size: 1.2rem; font-weight: 800; color: #c0392b; margin-bottom: 8px; }
+    .room-code-display {
+      font-size: 3rem; font-weight: 900; letter-spacing: 0.2em;
+      color: #e74c3c; direction: ltr; margin: 16px 0;
+      text-shadow: 0 2px 12px rgba(231,76,60,0.2);
     }
+    .waiting-hint { font-size: 0.85rem; color: #aaa; }
+    .spinner {
+      width: 36px; height: 36px; border: 3px solid #fce4ec;
+      border-top-color: #e74c3c; border-radius: 50%;
+      animation: spin 0.8s linear infinite; margin: 20px auto 0;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
 
+    /* GAME */
+    #game { display: none; flex-direction: column; align-items: center; width: 100%; }
+    .title-area { text-align: center; margin-bottom: 18px; }
+    .title-emoji { font-size: 2.4rem; margin-bottom: 4px; }
+    h1.game-title { font-size: 1.5rem; font-weight: 800; color: #c0392b; text-shadow: 0 2px 8px rgba(192,57,43,0.15); }
+    .my-role { font-size: 0.8rem; color: #999; margin-top: 4px; }
     .scoreboard {
-      display: flex;
-      gap: 24px;
-      margin-bottom: 24px;
-      background: white;
-      border-radius: 20px;
-      padding: 14px 32px;
-      box-shadow: 0 4px 20px rgba(0,0,0,0.08);
-      border: 2px solid #fce4ec;
+      display: flex; gap: 24px; margin-bottom: 18px;
+      background: white; border-radius: 20px; padding: 12px 28px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.08); border: 2px solid #fce4ec;
     }
-    .score-player { text-align: center; min-width: 60px; }
-    .score-fruit { font-size: 1.8rem; }
-    .score-num { font-size: 1.6rem; font-weight: 800; line-height: 1; }
-    .score-label { font-size: 0.7rem; color: #aaa; margin-top: 2px; }
-
-    .status {
-      margin-bottom: 20px;
-      height: 44px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
+    .score-player { text-align: center; min-width: 56px; }
+    .score-fruit { font-size: 1.7rem; }
+    .score-num { font-size: 1.5rem; font-weight: 800; line-height: 1; }
+    .score-label { font-size: 0.65rem; color: #aaa; margin-top: 2px; }
+    .status { margin-bottom: 16px; height: 44px; display: flex; align-items: center; justify-content: center; }
     .status-pill {
-      padding: 10px 24px;
-      border-radius: 30px;
-      font-size: 1rem;
-      font-weight: 600;
-      color: #555;
-      background: white;
-      box-shadow: 0 2px 12px rgba(0,0,0,0.07);
-      border: 2px solid #f0f0f0;
+      padding: 10px 22px; border-radius: 30px; font-size: 0.95rem;
+      font-weight: 600; color: #555; background: white;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.07); border: 2px solid #f0f0f0;
     }
-    .status-pill .big { font-size: 1.4rem; }
+    .status-pill .big { font-size: 1.3rem; }
     .status-winner {
-      color: white;
-      padding: 10px 28px;
-      border-radius: 30px;
-      font-size: 1.15rem;
-      font-weight: 700;
+      color: white; padding: 10px 28px; border-radius: 30px;
+      font-size: 1.1rem; font-weight: 700;
       box-shadow: 0 4px 16px rgba(0,0,0,0.2);
       animation: pop 0.4s cubic-bezier(.36,2,.4,.8);
     }
     .winner-x { background: linear-gradient(135deg, #e74c3c, #c0392b); }
     .winner-o { background: linear-gradient(135deg, #f39c12, #e67e22); }
     .winner-draw { background: linear-gradient(135deg, #8e44ad, #6c3483); }
-
     .board {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 10px;
-      background: white;
-      padding: 16px;
-      border-radius: 24px;
+      display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px;
+      background: white; padding: 14px; border-radius: 22px;
       box-shadow: 0 8px 40px rgba(0,0,0,0.12);
-      border: 2px solid #fce4ec;
-      margin-bottom: 24px;
+      border: 2px solid #fce4ec; margin-bottom: 18px;
     }
     .cell {
-      width: 88px;
-      height: 88px;
-      border-radius: 16px;
-      border: 2px solid #f0dde0;
-      background: white;
-      font-size: 2.6rem;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      transition: all 0.15s;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+      width: 84px; height: 84px; border-radius: 14px;
+      border: 2px solid #f0dde0; background: white; font-size: 2.4rem;
+      cursor: pointer; display: flex; align-items: center; justify-content: center;
+      transition: all 0.15s; box-shadow: 0 2px 8px rgba(0,0,0,0.05);
     }
-    .cell:hover:not(.taken):not(.done) {
-      background: #fff5f5;
-      transform: scale(1.04);
-    }
+    .cell:hover:not(.taken):not(.blocked) { background: #fff5f5; transform: scale(1.04); }
     .cell.taken { background: #fafafa; box-shadow: inset 0 1px 4px rgba(0,0,0,0.06); cursor: default; }
+    .cell.blocked { cursor: not-allowed; }
     .cell.win-x { border: 3px solid #e74c3c; background: #fff0ef; box-shadow: 0 0 18px rgba(231,76,60,0.3); transform: scale(1.06); }
     .cell.win-o { border: 3px solid #f39c12; background: #fff8ef; box-shadow: 0 0 18px rgba(243,156,18,0.3); transform: scale(1.06); }
-
     .reset-btn {
       background: linear-gradient(135deg, #e74c3c, #c0392b);
-      color: white;
-      border: none;
-      border-radius: 30px;
-      padding: 13px 36px;
-      font-size: 1rem;
-      font-weight: 700;
-      cursor: pointer;
-      box-shadow: 0 4px 16px rgba(192,57,43,0.35);
+      color: white; border: none; border-radius: 30px;
+      padding: 12px 32px; font-size: 0.95rem; font-weight: 700;
+      cursor: pointer; box-shadow: 0 4px 16px rgba(192,57,43,0.35);
       transition: transform 0.15s, box-shadow 0.15s;
-      letter-spacing: 0.03em;
-      font-family: inherit;
+      font-family: inherit; margin-bottom: 10px;
     }
-    .reset-btn:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 8px 24px rgba(192,57,43,0.4);
+    .reset-btn:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(192,57,43,0.4); }
+    .leave-btn {
+      background: none; border: none; color: #ccc;
+      font-size: 0.8rem; cursor: pointer; font-family: inherit; text-decoration: underline;
     }
-
+    .leave-btn:hover { color: #999; }
+    .room-badge { font-size: 0.75rem; color: #ccc; margin-bottom: 14px; }
+    .room-badge span { font-weight: 700; color: #e74c3c; letter-spacing: 0.1em; direction: ltr; display: inline-block; }
     @keyframes pop {
       0% { transform: scale(0.7); opacity: 0; }
       70% { transform: scale(1.1); }
@@ -148,26 +149,38 @@
 </head>
 <body>
 
-  <!-- Background fruits -->
-  <script>
-    const bgFruits = ["🍇","🍊","🍏","🍑","🫐","🍍","🥭","🍒"];
-    const tops    = [5,15,70,80,10,85,40,60];
-    const lefts   = [5,88,3,90,45,50,80,10];
-    const sizes   = [1.5,2.3,1.5,2.3,1.5,2.3,1.5,2.3];
-    bgFruits.forEach((f, i) => {
-      const el = document.createElement('div');
-      el.className = 'bg-fruit';
-      el.textContent = f;
-      el.style.cssText = `font-size:${sizes[i]}rem;top:${tops[i]}%;left:${lefts[i]}%;transform:rotate(${i*45}deg)`;
-      document.body.appendChild(el);
-    });
-  </script>
+<!-- LOBBY -->
+<div id="lobby">
+  <div style="font-size:2.2rem;margin-bottom:8px">🍓 X 🍋</div>
+  <h1>איקס עיגול עם פריאל</h1>
+  <div class="sub">משחק מרובה שחקנים</div>
+  <button class="lobby-btn btn-new" onclick="createRoom()">🆕 צור חדר חדש</button>
+  <div class="divider">או</div>
+  <div class="join-row">
+    <input class="code-input" id="join-code" maxlength="4" placeholder="קוד" oninput="this.value=this.value.replace(/\D/g,'')">
+    <button class="btn-join" onclick="joinRoom()">הצטרף</button>
+  </div>
+  <div id="lobby-err" style="color:#e74c3c;font-size:0.8rem;margin-top:10px;min-height:18px"></div>
+</div>
 
+<!-- WAITING -->
+<div id="waiting">
+  <h2>ממתין לשחקן שני...</h2>
+  <div class="waiting-hint">שלח לחבר את הקוד:</div>
+  <div class="room-code-display" id="display-code"></div>
+  <div class="waiting-hint">כשהוא יכנס המשחק יתחיל אוטומטית</div>
+  <div class="spinner"></div>
+  <button class="leave-btn" style="margin-top:20px" onclick="leaveRoom()">בטל</button>
+</div>
+
+<!-- GAME -->
+<div id="game">
   <div class="title-area">
     <div class="title-emoji">🍓 X 🍋</div>
-    <h1>איקס עיגול עם פריאל</h1>
+    <h1 class="game-title">איקס עיגול עם פריאל</h1>
+    <div class="my-role" id="my-role"></div>
   </div>
-
+  <div class="room-badge">חדר: <span id="room-badge-code"></span></div>
   <div class="scoreboard">
     <div class="score-player">
       <div class="score-fruit">🍓</div>
@@ -180,89 +193,185 @@
       <div class="score-label">ניקוד</div>
     </div>
   </div>
-
-  <div class="status" id="status">
-    <div class="status-pill">תור של: <span class="big">🍓</span></div>
-  </div>
-
+  <div class="status" id="status"></div>
   <div class="board" id="board"></div>
+  <button class="reset-btn" id="reset-btn" onclick="requestReset()" style="display:none">🔄 משחק חדש</button>
+  <button class="leave-btn" onclick="leaveRoom()">עזוב חדר</button>
+</div>
 
-  <button class="reset-btn" onclick="resetGame()">🔄 משחק חדש</button>
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+  import { getDatabase, ref, set, get, onValue, update, remove }
+    from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
 
-  <script>
-    const FRUIT = { X: '🍓', O: '🍋' };
-    const LINES = [[0,1,2],[3,4,5],[6,7,8],[0,3,6],[1,4,7],[2,5,8],[0,4,8],[2,4,6]];
+  const firebaseConfig = {
+    apiKey: "AIzaSyD2SECYc_9V7NDASMzSzf0Se5OL6NyU8wA",
+    authDomain: "priel-af970.firebaseapp.com",
+    databaseURL: "https://priel-af970-default-rtdb.firebaseio.com",
+    projectId: "priel-af970",
+    storageBucket: "priel-af970.firebasestorage.app",
+    messagingSenderId: "816586982849",
+    appId: "1:816586982849:web:b991437452fffae36e5b40"
+  };
 
-    let board = Array(9).fill(null);
-    let isX = true;
-    let scores = { X: 0, O: 0 };
-    let gameOver = false;
+  const app = initializeApp(firebaseConfig);
+  const db = getDatabase(app);
 
-    function checkWinner(b) {
-      for (const [a,c,d] of LINES) {
-        if (b[a] && b[a] === b[c] && b[a] === b[d]) return { winner: b[a], line: [a,c,d] };
+  const FRUIT = { X: '🍓', O: '🍋' };
+  const LINES = [[0,1,2],[3,4,5],[6,7,8],[0,3,6],[1,4,7],[2,5,8],[0,4,8],[2,4,6]];
+
+  let myRole = null;
+  let roomCode = null;
+  let unsubscribe = null;
+
+  // Background fruits
+  ["🍇","🍊","🍏","🍑","🫐","🍍","🥭","🍒"].forEach((f, i) => {
+    const el = document.createElement('div');
+    el.className = 'bg-fruit';
+    el.textContent = f;
+    const tops  = [5,15,70,80,10,85,40,60];
+    const lefts = [5,88,3,90,45,50,80,10];
+    el.style.cssText = `font-size:${1.5+(i%3)*0.8}rem;top:${tops[i]}%;left:${lefts[i]}%;transform:rotate(${i*45}deg)`;
+    document.body.appendChild(el);
+  });
+
+  function randomCode() { return Math.floor(1000 + Math.random() * 9000).toString(); }
+
+  function checkWinner(b) {
+    for (const [a,c,d] of LINES)
+      if (b[a] && b[a] === b[c] && b[a] === b[d]) return { winner: b[a], line: [a,c,d] };
+    return null;
+  }
+
+  function show(id) {
+    document.getElementById('lobby').style.display  = id === 'lobby'   ? 'block' : 'none';
+    document.getElementById('waiting').style.display = id === 'waiting' ? 'block' : 'none';
+    document.getElementById('game').style.display   = id === 'game'    ? 'flex'  : 'none';
+  }
+
+  window.createRoom = async function() {
+    let code;
+    for (let i = 0; i < 10; i++) {
+      code = randomCode();
+      const snap = await get(ref(db, `rooms/${code}`));
+      if (!snap.exists()) break;
+    }
+    await set(ref(db, `rooms/${code}`), {
+      board: Array(9).fill(null),
+      turn: 'X',
+      scores: { X: 0, O: 0 },
+      status: 'waiting',
+    });
+    roomCode = code;
+    myRole = 'X';
+    document.getElementById('display-code').textContent = code;
+    show('waiting');
+    listenRoom();
+  };
+
+  window.joinRoom = async function() {
+    const code = document.getElementById('join-code').value.trim();
+    const errEl = document.getElementById('lobby-err');
+    if (code.length !== 4) { errEl.textContent = 'קוד חייב להיות 4 ספרות'; return; }
+    const snap = await get(ref(db, `rooms/${code}`));
+    if (!snap.exists()) { errEl.textContent = 'חדר לא נמצא 🤷'; return; }
+    if (snap.val().status !== 'waiting') { errEl.textContent = 'החדר כבר מלא'; return; }
+    errEl.textContent = '';
+    await update(ref(db, `rooms/${code}`), { status: 'playing' });
+    roomCode = code;
+    myRole = 'O';
+    show('game');
+    initGameUI();
+    listenRoom();
+  };
+
+  function listenRoom() {
+    if (unsubscribe) unsubscribe();
+    unsubscribe = onValue(ref(db, `rooms/${roomCode}`), snap => {
+      if (!snap.exists()) { leaveRoom(); return; }
+      const data = snap.val();
+      if (myRole === 'X' && data.status === 'playing' && document.getElementById('waiting').style.display !== 'none') {
+        show('game');
+        initGameUI();
       }
-      return null;
+      if (document.getElementById('game').style.display !== 'none') renderGame(data);
+    });
+  }
+
+  function initGameUI() {
+    document.getElementById('my-role').textContent = `אתה: ${FRUIT[myRole]}`;
+    document.getElementById('room-badge-code').textContent = roomCode;
+  }
+
+  function renderGame(data) {
+    const board = data.board || Array(9).fill(null);
+    const result = checkWinner(board);
+    const isDraw = !result && board.every(Boolean);
+    const scores = data.scores || { X: 0, O: 0 };
+    const isMyTurn = data.turn === myRole && !result && !isDraw;
+
+    document.getElementById('score-x').textContent = scores.X;
+    document.getElementById('score-o').textContent = scores.O;
+
+    const statusEl = document.getElementById('status');
+    if (result) {
+      const isMe = result.winner === myRole;
+      const cls = result.winner === 'X' ? 'winner-x' : 'winner-o';
+      statusEl.innerHTML = `<div class="status-winner ${cls}">${FRUIT[result.winner]} ${isMe ? 'ניצחת! 🎉' : 'ניצח 😅'}</div>`;
+      document.getElementById('reset-btn').style.display = 'inline-block';
+    } else if (isDraw) {
+      statusEl.innerHTML = `<div class="status-winner winner-draw">🤝 תיקו!</div>`;
+      document.getElementById('reset-btn').style.display = 'inline-block';
+    } else {
+      const turnFruit = FRUIT[data.turn];
+      const msg = data.turn === myRole ? 'התור שלך!' : `תור של ${turnFruit}`;
+      statusEl.innerHTML = `<div class="status-pill">${msg} <span class="big">${turnFruit}</span></div>`;
+      document.getElementById('reset-btn').style.display = 'none';
     }
 
-    function renderBoard(winLine = []) {
-      const el = document.getElementById('board');
-      el.innerHTML = '';
-      board.forEach((cell, i) => {
-        const btn = document.createElement('button');
-        btn.className = 'cell' + (cell ? ' taken' : '') + (gameOver ? ' done' : '');
-        if (winLine.includes(i)) btn.classList.add(cell === 'X' ? 'win-x' : 'win-o');
-        btn.textContent = cell ? FRUIT[cell] : '';
-        btn.onclick = () => handleClick(i);
-        el.appendChild(btn);
-      });
-    }
+    const boardEl = document.getElementById('board');
+    boardEl.innerHTML = '';
+    const winLine = result ? result.line : [];
+    board.forEach((cell, i) => {
+      const btn = document.createElement('button');
+      btn.className = 'cell' + (cell ? ' taken' : '') + (!isMyTurn || cell ? ' blocked' : '');
+      if (winLine.includes(i)) btn.classList.add(cell === 'X' ? 'win-x' : 'win-o');
+      btn.textContent = cell ? FRUIT[cell] : '';
+      btn.onclick = () => handleMove(i, board, data.turn, result, isDraw);
+      boardEl.appendChild(btn);
+    });
+  }
 
-    function renderStatus(result, isDraw) {
-      const el = document.getElementById('status');
-      if (result) {
-        const fruit = FRUIT[result.winner];
-        el.innerHTML = `<div class="status-winner ${result.winner === 'X' ? 'winner-x' : 'winner-o'}">${fruit} ניצח! 🎉</div>`;
-      } else if (isDraw) {
-        el.innerHTML = `<div class="status-winner winner-draw">🤝 תיקו!</div>`;
-      } else {
-        el.innerHTML = `<div class="status-pill">תור של: <span class="big">${FRUIT[isX ? 'X' : 'O']}</span></div>`;
-      }
+  async function handleMove(i, board, turn, result, isDraw) {
+    if (board[i] || turn !== myRole || result || isDraw) return;
+    const next = [...board];
+    next[i] = myRole;
+    const res = checkWinner(next);
+    const updates = { board: next, turn: myRole === 'X' ? 'O' : 'X' };
+    if (res) {
+      const snap = await get(ref(db, `rooms/${roomCode}/scores`));
+      const scores = snap.val() || { X: 0, O: 0 };
+      scores[res.winner]++;
+      updates.scores = scores;
     }
+    await update(ref(db, `rooms/${roomCode}`), updates);
+  }
 
-    function handleClick(i) {
-      if (board[i] || gameOver) return;
-      board[i] = isX ? 'X' : 'O';
-      const result = checkWinner(board);
-      const isDraw = !result && board.every(Boolean);
-      if (result) {
-        scores[result.winner]++;
-        document.getElementById('score-x').textContent = scores.X;
-        document.getElementById('score-o').textContent = scores.O;
-        gameOver = true;
-        renderBoard(result.line);
-        renderStatus(result, false);
-      } else if (isDraw) {
-        gameOver = true;
-        renderBoard();
-        renderStatus(null, true);
-      } else {
-        isX = !isX;
-        renderBoard();
-        renderStatus(null, false);
-      }
-    }
+  window.requestReset = async function() {
+    await update(ref(db, `rooms/${roomCode}`), {
+      board: Array(9).fill(null),
+      turn: 'X',
+    });
+  };
 
-    function resetGame() {
-      board = Array(9).fill(null);
-      isX = true;
-      gameOver = false;
-      renderBoard();
-      renderStatus(null, false);
-    }
-
-    renderBoard();
-    renderStatus(null, false);
-  </script>
+  window.leaveRoom = async function() {
+    if (unsubscribe) { unsubscribe(); unsubscribe = null; }
+    if (roomCode) { await remove(ref(db, `rooms/${roomCode}`)); roomCode = null; }
+    myRole = null;
+    document.getElementById('join-code').value = '';
+    document.getElementById('lobby-err').textContent = '';
+    show('lobby');
+  };
+</script>
 </body>
 </html>
