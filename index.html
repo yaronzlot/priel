@@ -304,9 +304,13 @@
   }
 
   function renderGame(data) {
-    const board = data.board || Array(9).fill(null);
+    // Firebase may return object instead of array — normalize
+    const raw = data.board || {};
+    const board = Array.isArray(raw)
+      ? raw
+      : Array.from({length: 9}, (_, i) => (raw[i] !== undefined ? raw[i] : null));
     const result = checkWinner(board);
-    const isDraw = !result && board.every(Boolean);
+    const isDraw = !result && board.filter(Boolean).length === 9;
     const scores = data.scores || { X: 0, O: 0 };
     const isMyTurn = data.turn === myRole && !result && !isDraw;
 
@@ -344,7 +348,7 @@
 
   async function handleMove(i, board, turn, result, isDraw) {
     if (board[i] || turn !== myRole || result || isDraw) return;
-    const next = [...board];
+    const next = Array.from({length: 9}, (_, k) => board[k] || null);
     next[i] = myRole;
     const res = checkWinner(next);
     const updates = { board: next, turn: myRole === 'X' ? 'O' : 'X' };
