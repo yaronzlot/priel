@@ -328,22 +328,23 @@
       document.getElementById('reset-btn').style.display = 'inline-block';
     } else {
       const turnFruit = FRUIT[data.turn];
-      const msg = data.turn === myRole ? 'התור שלך!' : `תור של ${turnFruit}`;
-      statusEl.innerHTML = `<div class="status-pill">${msg} <span class="big">${turnFruit}</span></div>`;
+      const msg = data.turn === myRole ? `התור שלך! <span class="big">${turnFruit}</span>` : `תור של <span class="big">${turnFruit}</span>`;
+      statusEl.innerHTML = `<div class="status-pill">${msg}</div>`;
       document.getElementById('reset-btn').style.display = 'none';
     }
 
     const boardEl = document.getElementById('board');
     boardEl.innerHTML = '';
     const winLine = result ? result.line : [];
-    board.forEach((cell, i) => {
+    for (let i = 0; i < 9; i++) {
+      const cell = board[i] || null;
       const btn = document.createElement('button');
       btn.className = 'cell' + (cell ? ' taken' : '') + (!isMyTurn || cell ? ' blocked' : '');
       if (winLine.includes(i)) btn.classList.add(cell === 'X' ? 'win-x' : 'win-o');
       btn.textContent = cell ? FRUIT[cell] : '';
       btn.onclick = () => handleMove(i, board, data.turn, result, isDraw);
       boardEl.appendChild(btn);
-    });
+    }
   }
 
   async function handleMove(i, board, turn, result, isDraw) {
