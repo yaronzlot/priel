@@ -186,6 +186,7 @@
   <h1>איקס עיגול עם פריאל</h1>
   <div class="sub">משחק מרובה שחקנים</div>
   <button class="lobby-btn btn-new" onclick="createRoom()">🤝 צרף חבר</button>
+  <button class="lobby-btn" style="background:linear-gradient(135deg,#8e44ad,#6c3483);color:white;box-shadow:0 4px 16px rgba(142,68,173,0.3)" onclick="playVsComputer()">🤖 שחק נגד המחשב</button>
   <div id="lobby-err" style="color:#e74c3c;font-size:0.8rem;margin-top:10px;min-height:18px"></div>
 </div>
 
@@ -272,6 +273,10 @@
   let roomCode = null;
   let unsubscribe = null;
   let lastScores = { X: 0, O: 0 };
+  let vsComputer = false;
+  let cpuBoard = null;
+  let cpuScores = { X: 0, O: 0 };
+  let cpuTurn = 'X';
 
   // Background fruits
   ["🍇","🍊","🍏","🍑","🫐","🍍","🥭","🍒"].forEach((f, i) => {
@@ -436,6 +441,13 @@
   }
 
   window.requestReset = async function() {
+    if (vsComputer) {
+      cpuBoard = Array(9).fill(null);
+      cpuTurn = 'X';
+      document.getElementById('reset-btn').style.display = 'none';
+      renderCpuGame();
+      return;
+    }
     await update(ref(db, `rooms/${roomCode}`), {
       board: Array(9).fill(null),
       turn: 'X',
@@ -467,10 +479,88 @@
     showEmojiBubble(emojiData.value, isMe);
   }
 
+  window.playVsComputer = function() {
+    vsComputer = true;
+    myRole = 'X';
+    cpuBoard = Array(9).fill(null);
+    cpuScores = { X: 0, O: 0 };
+    cpuTurn = 'X';
+    show('game');
+    document.getElementById('my-role').textContent = 'אתה: 🍓';
+    document.getElementById('room-badge-code').textContent = 'מחשב 🤖';
+    renderCpuGame();
+  };
+
+  function renderCpuGame() {
+    const result = checkWinner(cpuBoard);
+    const isDraw = !result && cpuBoard.filter(Boolean).length === 9;
+    document.getElementById('score-x').textContent = cpuScores.X;
+    document.getElementById('score-o').textContent = cpuScores.O;
+
+    const statusEl = document.getElementById('status');
+    if (result) {
+      const isMe = result.winner === 'X';
+      const cls = result.winner === 'X' ? 'winner-x' : 'winner-o';
+      statusEl.innerHTML = `<div class="status-winner ${cls}">${FRUIT[result.winner]} ${isMe ? 'ניצחת! 🎉' : 'תמשיך לחלום 😴'}</div>`;
+      document.getElementById('reset-btn').style.display = 'inline-block';
+    } else if (isDraw) {
+      statusEl.innerHTML = `<div class="status-winner winner-draw">🤝 תיקו!</div>`;
+      document.getElementById('reset-btn').style.display = 'inline-block';
+    } else {
+      const isMyTurn = cpuTurn === 'X';
+      statusEl.innerHTML = isMyTurn
+        ? `<div class="status-pill">התור שלך! <span class="big">🍓</span></div>`
+        : `<div class="status-pill">🤖 המחשב חושב...</div>`;
+      document.getElementById('reset-btn').style.display = 'none';
+    }
+
+    const boardEl = document.getElementById('board');
+    boardEl.innerHTML = '';
+    const winLine = result ? result.line : [];
+    const isMyTurn = cpuTurn === 'X' && !result && !isDraw;
+    for (let i = 0; i < 9; i++) {
+      const cell = cpuBoard[i];
+      const btn = document.createElement('button');
+      btn.className = 'cell' + (cell ? ' taken' : '') + (!isMyTurn || cell ? ' blocked' : '');
+      if (winLine.includes(i)) btn.classList.add(cell === 'X' ? 'win-x' : 'win-o');
+      btn.textContent = cell ? FRUIT[cell] : '';
+      btn.onclick = () => handleCpuMove(i);
+      boardEl.appendChild(btn);
+    }
+  }
+
+  function handleCpuMove(i) {
+    if (cpuBoard[i] || cpuTurn !== 'X') return;
+    const result = checkWinner(cpuBoard);
+    const isDraw = !result && cpuBoard.filter(Boolean).length === 9;
+    if (result || isDraw) return;
+
+    cpuBoard[i] = 'X';
+    const res = checkWinner(cpuBoard);
+    if (res) { cpuScores.X++; cpuTurn = 'X'; renderCpuGame(); return; }
+    if (cpuBoard.filter(Boolean).length === 9) { renderCpuGame(); return; }
+
+    cpuTurn = 'O';
+    renderCpuGame();
+
+    // CPU plays after short delay
+    setTimeout(() => {
+      const empty = cpuBoard.map((v,i) => v ? null : i).filter(v => v !== null);
+      if (empty.length === 0) return;
+      const cpuPick = empty[Math.floor(Math.random() * empty.length)];
+      cpuBoard[cpuPick] = 'O';
+      const cpuRes = checkWinner(cpuBoard);
+      if (cpuRes) cpuScores.O++;
+      cpuTurn = 'X';
+      renderCpuGame();
+    }, 600);
+  }
+
   window.leaveRoom = async function() {
     if (unsubscribe) { unsubscribe(); unsubscribe = null; }
     if (roomCode) { await remove(ref(db, `rooms/${roomCode}`)); roomCode = null; }
     myRole = null;
+    vsComputer = false;
     document.getElementById('lobby-err').textContent = '';
     // Clear URL param
     history.replaceState({}, '', location.pathname);
