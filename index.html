@@ -186,7 +186,20 @@
   <h1>איקס עיגול עם פריאל</h1>
   <div class="sub">משחק מרובה שחקנים</div>
   <button class="lobby-btn btn-new" onclick="createRoom()">🤝 צרף חבר</button>
-  <button class="lobby-btn" style="background:linear-gradient(135deg,#8e44ad,#6c3483);color:white;box-shadow:0 4px 16px rgba(142,68,173,0.3)" onclick="playVsComputer()">🤖 שחק נגד המחשב</button>
+  <div style="margin-bottom:10px">
+    <div style="font-size:0.75rem;color:#aaa;margin-bottom:8px;text-align:center">🤖 שחק נגד המחשב</div>
+    <div style="display:flex;gap:8px;margin-bottom:10px">
+      <button onclick="startCpu('easy')" style="flex:1;padding:12px 4px;border-radius:16px;border:2px solid #2ecc71;background:rgba(46,204,113,0.1);color:#2ecc71;font-size:0.8rem;font-weight:700;cursor:pointer;font-family:inherit">
+        😊<br>קל
+      </button>
+      <button onclick="startCpu('medium')" style="flex:1;padding:12px 4px;border-radius:16px;border:2px solid #f39c12;background:rgba(243,156,18,0.1);color:#f39c12;font-size:0.8rem;font-weight:700;cursor:pointer;font-family:inherit">
+        🧠<br>בינוני
+      </button>
+      <button onclick="startCpu('hard')" style="flex:1;padding:12px 4px;border-radius:16px;border:2px solid #e74c3c;background:rgba(231,76,60,0.1);color:#e74c3c;font-size:0.8rem;font-weight:700;cursor:pointer;font-family:inherit">
+        💀<br>קשה
+      </button>
+    </div>
+  </div>
   <div id="lobby-err" style="color:#e74c3c;font-size:0.8rem;margin-top:10px;min-height:18px"></div>
 </div>
 
@@ -275,6 +288,7 @@
   let lastScores = { X: 0, O: 0 };
   let vsComputer = false;
   let cpuBoard = null;
+  let cpuDifficulty = 'medium'; // 'easy', 'medium', 'hard'
   let cpuScores = { X: 0, O: 0 };
   let cpuTurn = 'X';
 
@@ -479,7 +493,8 @@
     showEmojiBubble(emojiData.value, isMe);
   }
 
-  window.playVsComputer = function() {
+  window.startCpu = function(difficulty) {
+    cpuDifficulty = difficulty;
     vsComputer = true;
     myRole = 'X';
     cpuBoard = Array(9).fill(null);
@@ -487,9 +502,86 @@
     cpuTurn = 'X';
     show('game');
     document.getElementById('my-role').textContent = 'אתה: 🍓';
-    document.getElementById('room-badge-code').textContent = 'מחשב 🤖';
+    const labels = { easy:'קל 😊', medium:'בינוני 🧠', hard:'קשה 💀' };
+    document.getElementById('room-badge-code').textContent = `מחשב ${labels[difficulty]}`;
     renderCpuGame();
   };
+
+  window.playVsComputer = function() { startCpu('medium'); };
+
+  // ─── AI Logic ───
+  function checkWinnerBoard(board) {
+    const LINES = [[0,1,2],[3,4,5],[6,7,8],[0,3,6],[1,4,7],[2,5,8],[0,4,8],[2,4,6]];
+    for (const [a,b,c] of LINES) {
+      if (board[a] && board[a]===board[b] && board[a]===board[c]) return board[a];
+    }
+    return null;
+  }
+
+  function minimax(board, isMaximizing) {
+    const winner = checkWinnerBoard(board);
+    if (winner === 'O') return 10;
+    if (winner === 'X') return -10;
+    if (board.every(Boolean)) return 0;
+
+    const empty = board.map((v,i)=>v?null:i).filter(v=>v!==null);
+    if (isMaximizing) {
+      let best = -Infinity;
+      for (const i of empty) {
+        board[i] = 'O';
+        best = Math.max(best, minimax(board, false));
+        board[i] = null;
+      }
+      return best;
+    } else {
+      let best = Infinity;
+      for (const i of empty) {
+        board[i] = 'X';
+        best = Math.min(best, minimax(board, true));
+        board[i] = null;
+      }
+      return best;
+    }
+  }
+
+  function getCpuMove(board) {
+    const empty = board.map((v,i)=>v?null:i).filter(v=>v!==null);
+    if (empty.length === 0) return null;
+
+    if (cpuDifficulty === 'easy') {
+      // Pure random
+      return empty[Math.floor(Math.random() * empty.length)];
+    }
+
+    if (cpuDifficulty === 'medium') {
+      // Win if can, block if must, else random
+      for (const i of empty) {
+        board[i] = 'O';
+        if (checkWinnerBoard(board)) { board[i] = null; return i; }
+        board[i] = null;
+      }
+      for (const i of empty) {
+        board[i] = 'X';
+        if (checkWinnerBoard(board)) { board[i] = null; return i; }
+        board[i] = null;
+      }
+      // Prefer center, then corners
+      if (board[4] === null) return 4;
+      const corners = [0,2,6,8].filter(i => board[i]===null);
+      if (corners.length) return corners[Math.floor(Math.random()*corners.length)];
+      return empty[Math.floor(Math.random() * empty.length)];
+    }
+
+    // Hard — minimax
+    let bestScore = -Infinity, bestMove = empty[0];
+    for (const i of empty) {
+      board[i] = 'O';
+      const score = minimax(board, false);
+      board[i] = null;
+      if (score > bestScore) { bestScore = score; bestMove = i; }
+    }
+    return bestMove;
+  }
 
   function renderCpuGame() {
     const result = checkWinner(cpuBoard);
@@ -545,9 +637,8 @@
 
     // CPU plays after short delay
     setTimeout(() => {
-      const empty = cpuBoard.map((v,i) => v ? null : i).filter(v => v !== null);
-      if (empty.length === 0) return;
-      const cpuPick = empty[Math.floor(Math.random() * empty.length)];
+      const cpuPick = getCpuMove([...cpuBoard]);
+      if (cpuPick === null) return;
       cpuBoard[cpuPick] = 'O';
       const cpuRes = checkWinner(cpuBoard);
       if (cpuRes) cpuScores.O++;
