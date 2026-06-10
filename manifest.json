@@ -1,0 +1,27 @@
+{
+  "name": "איקס עיגול עם פריאל",
+  "short_name": "פריאל XO",
+  "description": "משחק איקס עיגול עם פריאל",
+  "start_url": "/priel/",
+  "scope": "/priel/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#fff9f0",
+  "theme_color": "#e74c3c",
+  "lang": "he",
+  "dir": "rtl",
+  "icons": [
+    {
+      "src": "icon-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "icon-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
